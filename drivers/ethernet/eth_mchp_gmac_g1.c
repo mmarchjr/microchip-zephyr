@@ -459,7 +459,7 @@ static int gmac_init(const struct device *dev, gmac_registers_t *gmac)
 #ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
 			    ETH_NCFGR_DBW(1) |
 #endif
-			    GMAC_NCFGR_RXCOEN_Msk;
+			GMAC_NCFGR_RXCOEN_Msk;
 
 	gmac->GMAC_NCR = GMAC_NCR_CLRSTAT_Msk | GMAC_NCR_MPE_Msk;
 	gmac->GMAC_IDR = UINT32_MAX;
@@ -907,6 +907,24 @@ static int eth_mchp_initialize(const struct device *dev)
 		return retval;
 	}
 
+	/*
+	 * Runtime verification of GCLK_ETH (local diagnostic patch, lost on
+	 * `west update`): clock_control_get_rate() on a GCLKPERIPH reads the
+	 * actual GEN source field from PCHCTRL[41]/[42] and reports that
+	 * generator's real rate. This is separate from MCK (which is only used
+	 * to derive the MDC clock for MDIO). Datasheet limits (DS60001795H
+	 * Table 52-18): fGCLK_ETH <= 25 MHz, fGCLK_ETH_TSU < fAHB.
+	 */
+	{
+		uint32_t gclk_tx_freq = 0;
+		uint32_t gclk_tsu_freq = 0;
+
+		(void)clock_control_get_rate(DEVICE_DT_GET(DT_NODELABEL(clock)), cfg->gclk_tx_sys,
+					     &gclk_tx_freq);
+		(void)clock_control_get_rate(DEVICE_DT_GET(DT_NODELABEL(clock)), cfg->gclk_tsu_sys,
+					     &gclk_tsu_freq);
+		LOG_INF("GCLK_ETH_TX=%u Hz GCLK_ETH_TSU=%u Hz", gclk_tx_freq, gclk_tsu_freq);
+	}
 #endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC */
 
 	retval = pinctrl_apply_state(cfg->pinctrl_cfg, PINCTRL_STATE_DEFAULT);
