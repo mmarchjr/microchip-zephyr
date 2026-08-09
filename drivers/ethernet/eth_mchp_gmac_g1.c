@@ -459,20 +459,7 @@ static int gmac_init(const struct device *dev, gmac_registers_t *gmac)
 #ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
 			    ETH_NCFGR_DBW(1) |
 #endif
-			    0;	/* GMAC_NCFGR_RXCOEN intentionally NOT set (see note below) */
-
-	/*
-	 * NOTE: RX checksum offload (GMAC_NCFGR_RXCOEN) is deliberately left
-	 * disabled. This driver never consumes the RX descriptor checksum
-	 * status (gmac_find_valid_frame only checks SOF/EOF and no
-	 * NET_PKT_RX_CHKSUM_* flags are set), so with
-	 * CONFIG_NET_CHECKSUM_OFFLOAD=y the net stack would skip its own
-	 * software verification while the MAC result is silently discarded -
-	 * frames with bad IP/TCP/UDP checksums would be accepted instead of
-	 * dropped. Keeping RXCOEN off restores software checksum verification
-	 * and matches MPLAB Harmony (checksumOffloadRx = TCPIP_MAC_CHECKSUM_NONE).
-	 * Note: this is a patch to vendored Zephyr and is lost on `west update`.
-	 */
+			GMAC_NCFGR_RXCOEN_Msk;
 
 	gmac->GMAC_NCR = GMAC_NCR_CLRSTAT_Msk | GMAC_NCR_MPE_Msk;
 	gmac->GMAC_IDR = UINT32_MAX;
