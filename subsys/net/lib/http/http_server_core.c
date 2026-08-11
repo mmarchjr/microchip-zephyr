@@ -1017,9 +1017,8 @@ static void http_server_thread(void *p1, void *p2, void *p3)
 		while (server_running) {
 			ret = http_server_init(&server_ctx);
 			if (ret < 0) {
-				LOG_ERR("HTTP server init failed (%d) — not retrying", ret);
-				server_running = false;
-				break;
+				LOG_ERR("Failed to initialize HTTP2 server");
+				goto again;
 			}
 
 			ret = http_server_run(&server_ctx);
@@ -1027,8 +1026,9 @@ static void http_server_thread(void *p1, void *p2, void *p3)
 				continue;
 			}
 
-			LOG_INF("Server run returned (%d), not restarting", ret);
-			server_running = false;
+again:
+			LOG_INF("Re-starting server (%d)", ret);
+			k_sleep(K_MSEC(CONFIG_HTTP_SERVER_RESTART_DELAY));
 		}
 	}
 }
