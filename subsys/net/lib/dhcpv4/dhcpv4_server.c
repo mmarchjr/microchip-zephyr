@@ -82,6 +82,11 @@ static net_dhcpv4_server_address_validator_cb_t address_validator_callback;
 static void *address_provider_callback_user_data;
 static net_dhcpv4_server_provider_cb_t address_provider_callback;
 
+/* Runtime override for the DNS server address advertised in option 6.
+ * When not set, CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS is used. */
+static struct net_in_addr server_dns_address;
+static bool server_dns_address_valid;
+
 static struct dhcpv4_server_ctx server_ctx[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static struct zsock_pollfd fds[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static K_MUTEX_DEFINE(server_lock);
@@ -425,7 +430,10 @@ static uint8_t *dhcpv4_encode_dns_server_option(uint8_t *buf, size_t *buflen)
 		return NULL;
 	}
 
-	if (net_addr_pton(NET_AF_INET, CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS, &dns_address)) {
+	if (server_dns_address_valid) {
+		dns_address = server_dns_address;
+	} else if (net_addr_pton(NET_AF_INET, CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS,
+				 &dns_address)) {
 		LOG_ERR("Invalid DNS server address: %s",
 			CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS);
 		return NULL;
@@ -438,6 +446,17 @@ static uint8_t *dhcpv4_encode_dns_server_option(uint8_t *buf, size_t *buflen)
 	*buflen -= DHCPV4_OPTIONS_DNS_SERVER_SIZE;
 
 	return buf + DHCPV4_OPTIONS_DNS_SERVER_SIZE;
+}
+
+void net_dhcpv4_server_set_dns_address(const struct net_in_addr *dns)
+{
+	if (dns == NULL) {
+		server_dns_address_valid = false;
+		return;
+	}
+
+	server_dns_address = *dns;
+	server_dns_address_valid = true;
 }
 
 static uint8_t *dhcpv4_encode_end_option(uint8_t *buf, size_t *buflen)
@@ -546,7 +565,8 @@ static uint8_t *dhcpv4_encode_requested_params(
 			break;
 
 		case DHCPV4_OPTIONS_DNS_SERVER:
-			if (strlen(CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS) == 0) {
+			if (strlen(CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS) == 0 &&
+			    !server_dns_address_valid) {
 				break;
 			}
 

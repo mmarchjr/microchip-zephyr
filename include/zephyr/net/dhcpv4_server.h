@@ -176,6 +176,18 @@ void net_dhcpv4_server_set_address_validator_cb(net_dhcpv4_server_address_valida
 						void *user_data);
 
 /**
+ * @brief Override the DNS server address advertised in DHCP responses.
+ *
+ * By default the server advertises CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS
+ * in option 6. This lets the application change the advertised value at
+ * runtime (e.g. when the server's own address changes) so clients keep
+ * resolving through the server. Pass NULL to revert to the Kconfig default.
+ *
+ * @param dns Address to advertise, or NULL to restore the Kconfig default.
+ */
+void net_dhcpv4_server_set_dns_address(const struct net_in_addr *dns);
+
+/**
  * @}
  */
 
