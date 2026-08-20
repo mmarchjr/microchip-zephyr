@@ -1,0 +1,62 @@
+# Copyright (c) 2024 Arrow Electronics.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TMP75 Digital Temperature Sensor. See more info at
+  https://www.ti.com/product/TMP75
+
+  The TMP75 is a predecessor to the TMP1075 with configurable resolution
+  (9-12 bits) and slightly different register bit layout.
+
+compatible: "ti,tmp75"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  resolution:
+    description: |
+      ADC resolution in bits. Higher resolution means longer conversion time.
+      Defaults to 12 bits (27.5ms conversion time).
+    type: int
+    enum:
+      - 9   # 9-bit resolution, 220ms conversion time
+      - 10  # 10-bit resolution, 110ms conversion time
+      - 11  # 11-bit resolution, 55ms conversion time
+      - 12  # 12-bit resolution, 27.5ms conversion time
+    default: 12
+  fault-queue:
+    description: |
+      Number of consecutive measured faults that will trigger the alert.
+      Defaults to 1, which matches the hardware power-on reset value
+      per the TMP75 datasheet.
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 6
+    default: 1
+  alert-gpios:
+    type: phandle-array
+    description: |
+      Identifies the ALERT signal, which is active-low open drain when
+      produced by the sensor.
+  one-shot-conversion:
+    description: One-shot conversion mode.
+    type: boolean
+  alert-pin-active-high:
+    description: Polarity of the alert pin.
+    type: boolean
+  interrupt-mode:
+    description: Selects the function of the ALERT pin (interrupt vs comparator mode).
+    type: boolean
+  shutdown-mode:
+    description: Sets the device in shutdown mode to conserve power.
+    type: boolean
+  lower-threshold:
+    description: Lower threshold for alert interrupt. Expressed in degrees C.
+    type: int
+  upper-threshold:
+    description: Upper threshold for alert interrupt. Expressed in degrees C.
+    type: int
+

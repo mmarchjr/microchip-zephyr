@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Arrow Electronics.
+# SPDX-License-Identifier: Apache-2.0
+
+# TMP75 temperature sensor configuration options
+
+menuconfig TMP75
+	bool "TMP75 Temperature Sensor"
+	default y
+	depends on DT_HAS_TI_TMP75_ENABLED
+	select I2C
+
+	help
+	  Enable the driver for Texas Instruments TMP75 Digital Temperature
+	  Sensors. The TMP75 is a predecessor to the TMP1075 with configurable
+	  resolution (9-12 bits).
+
+if TMP75
+
+config TMP75_ALERT_INTERRUPTS
+	bool "Allow interrupts to service over and under temp alerts"
+	help
+	  This will set up interrupts to service under and over temp alerts.
+	  See TMP75 spec sheet for more information on how these work.
+
+endif # TMP75
